@@ -1,7 +1,5 @@
 #!/bin/bash
 
-user=$(whoami)
-
 clear
 compatible_devices=$(ls /dev/serial/by-id | grep "FMDX.org")
 compatible_device_count=$(echo "$compatible_devices" | wc -l)
@@ -67,11 +65,11 @@ done
 if [[ "$distribution" == "arch" ]]; then
     sudo pacman -Sy
     sudo pacman -S git make gcc openssl pkgconf alsa-utils --noconfirm
-    sudo usermod -aG uucp $user
+    sudo usermod -aG uucp $USER
 elif [[ "$distribution" == "debian/ubuntu" ]]; then
     sudo apt update
     sudo apt install git make gcc libssl-dev pkgconf alsa-utils -y
-    sudo usermod -aG dialout $user
+    sudo usermod -aG dialout $USER
 fi
 
 git clone https://github.com/kkonradpl/xdrd.git
@@ -87,7 +85,7 @@ Wants=network-online.target
 
 [Service]
 ExecStart=/usr/bin/xdrd -s $xdrd_serial_port -p $xdrd_password
-User=$user
+User=$USER
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
@@ -113,7 +111,7 @@ fi
 cd fm-dx-webserver/
 npm install
 
-sudo usermod -aG audio $user
+sudo usermod -aG audio $USER
 
 cat <<EOF | sudo tee /etc/systemd/system/fm-dx-webserver.service
 [Unit]
@@ -124,7 +122,7 @@ Requires=xdrd.service
 [Service]
 ExecStart=npm run webserver
 WorkingDirectory=$build_dir/fm-dx-webserver
-User=$user
+User=$USER
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
