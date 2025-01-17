@@ -63,13 +63,28 @@ do
 done
 
 if [[ "$distribution" == "arch" ]]; then
-    sudo pacman -Sy
-    sudo pacman -S git make gcc openssl pkgconf alsa-utils --noconfirm
-    sudo usermod -aG uucp $USER
+    sudo pacman -Sy git make gcc openssl pkgconf alsa-utils --noconfirm
 elif [[ "$distribution" == "debian/ubuntu" ]]; then
     sudo apt update
     sudo apt install git make gcc libssl-dev pkgconf alsa-utils -y
-    sudo usermod -aG dialout $USER
+elif [[ "$distribution" == "fedora/redhat" ]]; then
+    sudo dnf install git make gcc openssl pkgconf alsa-utils --refresh -y
+elif [[ "$distribution" == "suse/opensuse" ]]; then
+    sudo zypper refresh
+    sudo zypper in git make gcc openssl pkgconf alsa-utils -y
+fi
+
+if [ $(getent group dialout) ]; then
+    if ! groups "${USER}" | grep -q '\bdialout\b'; then
+        sudo usermod -aG dialout $USER
+    fi
+elif [ $(getent group uucp) ]; then
+    if ! groups "${USER}" | grep -q '\buucp\b'; then
+        sudo usermod -aG uucp $USER
+    fi
+else
+    echo "Couldn't detect what group is used to access serial ports on your distribution."
+    exit
 fi
 
 git clone https://github.com/kkonradpl/xdrd.git
@@ -103,9 +118,13 @@ cd $build_dir
 git clone https://github.com/NoobishSVK/fm-dx-webserver.git
 
 if [[ "$distribution" == "arch"]]; then
-    sudo pacman -S ffmpeg nodejs npm -y
-elif [[ "$distribution" == "debian"]]; then
+    sudo pacman -S ffmpeg nodejs npm --noconfirm
+elif [[ "$distribution" == "debian/ubuntu"]]; then
     sudo apt install ffmpeg nodejs npm -y
+elif [[ "$distribution" == "fedora/redhat"]]; then
+    sudo dnf install ffmpeg nodejs npm -y
+elif [[ "$distribution" == "suse/opensuse"]]; then
+    sudo zypper in ffmpeg nodejs npm -y
 fi
 
 cd fm-dx-webserver/
