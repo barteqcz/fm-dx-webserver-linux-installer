@@ -46,15 +46,19 @@ do
     case $option in
         "Arch Linux")
             distribution="arch"
+            break
             ;;
         "Debian/Ubuntu")
             distribution="debian/ubuntu"
+            break
             ;;
         "Fedora/Red Hat")
             distribution="fedora/redhat"
+            break
             ;;
         "SUSE/OpenSUSE")
             distribution="suse/opensuse"
+            break
             ;;
         *)
             echo "Invalid option, please try again."
@@ -117,13 +121,13 @@ sudo systemctl enable --now xdrd
 cd $build_dir
 git clone https://github.com/NoobishSVK/fm-dx-webserver.git
 
-if [[ "$distribution" == "arch"]]; then
+if [[ "$distribution" == "arch" ]]; then
     sudo pacman -S ffmpeg nodejs npm --noconfirm
-elif [[ "$distribution" == "debian/ubuntu"]]; then
+elif [[ "$distribution" == "debian/ubuntu" ]]; then
     sudo apt install ffmpeg nodejs npm -y
-elif [[ "$distribution" == "fedora/redhat"]]; then
+elif [[ "$distribution" == "fedora/redhat" ]]; then
     sudo dnf install ffmpeg nodejs npm -y
-elif [[ "$distribution" == "suse/opensuse"]]; then
+elif [[ "$distribution" == "suse/opensuse" ]]; then
     sudo zypper in ffmpeg nodejs npm -y
 fi
 
