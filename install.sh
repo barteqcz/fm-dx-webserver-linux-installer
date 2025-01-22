@@ -143,6 +143,8 @@ After=network-online.target xdrd.service
 Requires=xdrd.service
 
 [Service]
+ExecStartPre=git pull
+ExecStartPre=npm ci
 ExecStart=npm run webserver
 WorkingDirectory=$build_dir/fm-dx-webserver
 User=$USER
