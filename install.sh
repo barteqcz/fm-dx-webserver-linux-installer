@@ -50,8 +50,8 @@ if [[ "$xdrd_install" == "true" ]]; then
     fi
 fi
 
-mkdir build
-cd build
+mkdir webserver
+cd webserver
 
 build_dir=$(pwd)
 
