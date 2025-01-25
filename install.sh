@@ -1,38 +1,53 @@
 #!/bin/bash
 
 clear
-compatible_devices=$(ls /dev/serial/by-id | grep "FMDX.org")
-compatible_device_count=$(echo "$compatible_devices" | wc -l)
 
-if [[ -z "$compatible_devices" ]]; then
-    read -rp "Please provide the used serial port path (or leave empty for the default: /dev/ttyUSB0): " xdrd_serial_port
-else
-    if [[ "$compatible_device_count" -eq 1 ]]; then
-        device_id=$(echo "$compatible_devices")
-        device_path="/dev/serial/by-id/$device_id"
-        xdrd_serial_port=$(readlink -f "$device_path")
+while true; do
+    read -rp "Do you want to install xdrd? [y/n] " xdrd_enable
+
+    if [[ "$xdrd_enable" == "Y" || "$xdrd_enable" == "y" ]]; then
+        xdrd_install="true"
+    elif [[ "$xdrd_enable" == "N" || "$xdrd_enable" == "n" ]]; then
+        xdrd_install="false"
     else
-        echo "Available devices (enter the corresponding number to pick one):"
-        select device_id in $compatible_devices; do
-            if [[ -n "$device_id" ]]; then
-                device_path="/dev/serial/by-id/$device_id"
-                xdrd_serial_port=$(readlink -f "$device_path")
-                break
-            else
-                echo "Invalid selection. Please try again."
-            fi
-        done
+        echo "Error: incorrect option. Please try again"
     fi
-fi
+done
 
-read -rp "Please provide password for xdrd (or leave empty for the default: password): " xdrd_password
+if [[ "$xdrd_install" == "true" ]]; then
+    compatible_devices=$(ls /dev/serial/by-id | grep "FMDX.org")
+    compatible_device_count=$(echo "$compatible_devices" | wc -l)
 
-if [[ $xdrd_serial_port == "" ]]; then
-    xdrd_serial_port="/dev/ttyUSB0"
-fi
+    if [[ -z "$compatible_devices" ]]; then
+        read -rp "Please provide the used serial port path (or leave empty for the default: /dev/ttyUSB0): " xdrd_serial_port
+    else
+        if [[ "$compatible_device_count" -eq 1 ]]; then
+            device_id=$(echo "$compatible_devices")
+            device_path="/dev/serial/by-id/$device_id"
+            xdrd_serial_port=$(readlink -f "$device_path")
+        else
+            echo "Available devices (enter the corresponding number to pick one):"
+            select device_id in $compatible_devices; do
+                if [[ -n "$device_id" ]]; then
+                    device_path="/dev/serial/by-id/$device_id"
+                    xdrd_serial_port=$(readlink -f "$device_path")
+                    break
+                else
+                    echo "Invalid selection. Please try again."
+                fi
+            done
+        fi
+    fi
 
-if [[ $xdrd_password == "" ]]; then
-    xdrd_password="password"
+    read -rp "Please provide password for xdrd (or leave empty for the default: password): " xdrd_password
+
+    if [[ $xdrd_serial_port == "" ]]; then
+        xdrd_serial_port="/dev/ttyUSB0"
+    fi
+
+    if [[ $xdrd_password == "" ]]; then
+        xdrd_password="password"
+    fi
 fi
 
 mkdir build
@@ -91,12 +106,13 @@ else
     exit
 fi
 
-git clone https://github.com/kkonradpl/xdrd.git
-cd xdrd/
-make
-sudo make install
+if [[ "$xdrd_install" == "true" ]]; then
+    git clone https://github.com/kkonradpl/xdrd.git
+    cd xdrd/
+    make
+    sudo make install
 
-cat <<EOF | sudo tee /etc/systemd/system/xdrd.service
+    cat <<EOF | sudo tee /etc/systemd/system/xdrd.service
 [Unit]
 Description=xdrd
 After=network-online.target
@@ -114,9 +130,10 @@ SyslogIdentifier=xdrd
 WantedBy=multi-user.target
 EOF
 
-sudo chmod 644 /etc/systemd/system/xdrd.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now xdrd
+    sudo chmod 644 /etc/systemd/system/xdrd.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now xdrd
+fi
 
 cd $build_dir
 git clone https://github.com/NoobishSVK/fm-dx-webserver.git
@@ -136,7 +153,8 @@ npm install
 
 sudo usermod -aG audio $USER
 
-cat <<EOF | sudo tee /etc/systemd/system/fm-dx-webserver.service
+if [[ "$xdrd_install" == "true" ]]; then
+    cat <<EOF | sudo tee /etc/systemd/system/fm-dx-webserver.service
 [Unit]
 Description=FM-DX Webserver
 After=network-online.target xdrd.service
@@ -156,10 +174,31 @@ SyslogIdentifier=fm-dx-webserver
 [Install]
 WantedBy=multi-user.target
 EOF
+else
+    cat <<EOF | sudo tee /etc/systemd/system/fm-dx-webserver.service
+[Unit]
+Description=FM-DX Webserver
+After=network-online.target
 
-sudo chmod 644 /etc/systemd/system/fm-dx-webserver.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now fm-dx-webserver
+[Service]
+ExecStartPre=git pull
+ExecStartPre=npm ci
+ExecStart=npm run webserver
+WorkingDirectory=$build_dir/fm-dx-webserver
+User=$USER
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=fm-dx-webserver
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo chmod 644 /etc/systemd/system/fm-dx-webserver.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now fm-dx-webserver
+fi
 
 clear
 echo "Installation process finished. Check http://localhost:8080 in your browser."
