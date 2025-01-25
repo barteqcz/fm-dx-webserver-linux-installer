@@ -50,6 +50,7 @@ if [[ "$xdrd_install" == "true" ]]; then
     fi
 fi
 
+cd ~
 mkdir webserver
 cd webserver
 
@@ -82,15 +83,15 @@ do
 done
 
 if [[ "$distribution" == "arch" ]]; then
-    sudo pacman -Sy git make gcc openssl pkgconf alsa-utils --noconfirm
+    sudo pacman -Sy git make cmake gcc openssl pkgconf alsa-utils --noconfirm
 elif [[ "$distribution" == "debian/ubuntu" ]]; then
     sudo apt update
-    sudo apt install git make gcc libssl-dev pkgconf alsa-utils -y
+    sudo apt install git make cmake gcc libssl-dev pkgconf alsa-utils -y
 elif [[ "$distribution" == "fedora/redhat" ]]; then
-    sudo dnf install git make gcc openssl pkgconf alsa-utils --refresh -y
+    sudo dnf install git make cmake gcc openssl pkgconf alsa-utils --refresh -y
 elif [[ "$distribution" == "suse/opensuse" ]]; then
     sudo zypper refresh
-    sudo zypper in git make gcc openssl pkgconf alsa-utils -y
+    sudo zypper in git make cmake gcc openssl pkgconf alsa-utils -y
 fi
 
 if [ $(getent group dialout) ]; then
