@@ -7,8 +7,10 @@ while true; do
 
     if [[ "$xdrd_enable" == "Y" || "$xdrd_enable" == "y" ]]; then
         xdrd_install="true"
+        break
     elif [[ "$xdrd_enable" == "N" || "$xdrd_enable" == "n" ]]; then
         xdrd_install="false"
+        break
     else
         echo "Error: incorrect option. Please try again"
     fi
